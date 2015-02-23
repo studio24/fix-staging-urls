@@ -210,11 +210,14 @@ class FixUrlsCommand extends Command
 
                     // Build regex
                     if (!is_null($basePathRemove)) {
-                        $regex = '!((src|href)=("|\'))?http(s)?://' . preg_quote($absoluteUrl, '!') . '/' . ltrim($basePathRemove, '/') . '!i';
+                        $regex = '!((src|href)=("|\'))?http(s)?://' . preg_quote($absoluteUrl, '!') . '/' . preg_quote(ltrim($basePathRemove, '/'), '!') . '!i';
                         $replacement = '$1/' . ltrim($basePathReplace, '/');
+                        $summaryRegex = preg_quote($absoluteUrl, '!') . '/' . preg_quote(ltrim($basePathRemove, '/'), '!');
+
                     } else {
                         $regex = '!((src|href)=("|\'))?http(s)?://' . preg_quote($absoluteUrl, '!') . '/!i';
                         $replacement = '$1/';
+                        $summaryRegex = preg_quote($absoluteUrl, '!');
                     }
 
                     if (!preg_match($regex, $row["content"])) {
@@ -223,7 +226,7 @@ class FixUrlsCommand extends Command
 
                     // Short text report on what we are replacing
                     $summary = '';
-                    if (preg_match_all('!(.{0,45}' . substr($regex, 1, strlen($regex) - 3) . '.{0,45})!i', $row['content'], $m, PREG_PATTERN_ORDER)) {
+                    if (preg_match_all('!(.{0,45}' . $summaryRegex . '.{0,45})!i', $row['content'], $m, PREG_PATTERN_ORDER)) {
                         foreach ($m[1] as $match) {
                             $summary .= $match . PHP_EOL;
                         }
@@ -261,13 +264,15 @@ class FixUrlsCommand extends Command
                 $pks = '';
                 foreach ($item['pk'] as $key => $val) {
                     if (!empty($pks)) {
-                        $pks .= ',';
+                        $pks .= ', ';
                     }
                     $pks .= $key . '=' . $val;
                 }
-                $output->writeln('In ' . $item['tbl'] . '.' . $item['fld'] . ' (' . $pks . ') I found ' . $item['count'] . ' instance/s of the staging URL:');
-                $output->writeln('Content: ' . $item['sum']);
-                $output->writeln('Replacement: ' . $item['repsum']);
+                $output->writeln('');
+                $output->writeln('In ' . $item['tbl'] . '.' . $item['fld'] . ' (' . $pks . ')');
+                $output->writeln('found ' . $item['count'] . ' instance/s of the staging URL:');
+                $output->writeln('Content: <fg=red>' . $item['sum'] . '</fg=red>');
+                $output->writeln('Replacement: <fg=green>' . $item['repsum'] . '</fg=green>');
             }
 
             $output->writeln("Found " . count($contentToFix) . " records in the database which need fixing");
