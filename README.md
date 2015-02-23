@@ -26,11 +26,11 @@ separated by spaces):
 
 You can pass database parameters:
 
-    php fixUrls.php --host=localhost --username=user --password=abc123 --database=my_database staging.domain.com
+    php fixUrls.php staging.domain.com --host=localhost --username=user --password=abc123 --database=my_database 
 
 You can also replace the base path for all links:
 
-    php fixUrls.php local.nwcambridge.co.uk --basePathRemove=/sites/default/files/ --basePathReplace=/files/
+    php fixUrls.php staging.domain.com --basePathRemove=/sites/default/files/ --basePathReplace=/files/
 
 For example, links such as:
 
