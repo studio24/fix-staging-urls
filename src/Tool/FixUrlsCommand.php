@@ -172,6 +172,7 @@ class FixUrlsCommand extends Command
             $table = trim($table);
             $textFields = array();
             $primaryKeys = array();
+            $replacementCount = 0;
 
             $output->writeln(PHP_EOL . "Checking table $table for links starting with http(s)://$absoluteUrl");
 
@@ -228,7 +229,10 @@ class FixUrlsCommand extends Command
                     $summary = '';
                     if (preg_match_all('!(.{0,45}' . $summaryRegex . '.{0,45})!i', $row['content'], $m, PREG_PATTERN_ORDER)) {
                         foreach ($m[1] as $match) {
-                            $summary .= $match . PHP_EOL;
+                            if (!empty($summary)) {
+                                $summary .= PHP_EOL;
+                            }
+                            $summary .= $match;
                         }
                     }
 
@@ -246,6 +250,8 @@ class FixUrlsCommand extends Command
                         'con'   => $replacedContent,
                         'count' => $count
                     );
+
+                    $replacementCount += $count;
 
                     $output->write('<info>+</info>');
                 }
@@ -270,12 +276,12 @@ class FixUrlsCommand extends Command
                 }
                 $output->writeln('');
                 $output->writeln('In ' . $item['tbl'] . '.' . $item['fld'] . ' (' . $pks . ')');
-                $output->writeln('found ' . $item['count'] . ' instance/s of the staging URL:');
+                $output->writeln('Found ' . $item['count'] . ' instance/s of the staging URL:');
                 $output->writeln('Content: <fg=red>' . $item['sum'] . '</fg=red>');
                 $output->writeln('Replacement: <fg=green>' . $item['repsum'] . '</fg=green>');
             }
 
-            $output->writeln("Found " . count($contentToFix) . " records in the database which need fixing");
+            $output->writeln("Found " . count($contentToFix) . " records with $replacementCount replacements in the table $table which need fixing");
 
             $question = new ConfirmationQuestion('<question>Do you want me to replace all content? (y/n)</question> ', false);
             if (!$helper->ask($input, $output, $question)) {
