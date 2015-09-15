@@ -121,9 +121,11 @@ class FixUrlsCommand extends Command
 
         $dbPassword = $input->getOption('password');
         if ($dbPassword == null) {
-            $question = new Question('Enter your database password: ');
+            $question = new Question('Enter your database password (hidden): ');
             $question->setValidator($notEmpty);
             $question->setMaxAttempts(2);
+            $question->setHidden(true);         // Don't output the password on the screen
+            $question->setHiddenFallback(false);// If we can't hide the password just let it show
             $dbPassword = $helper->ask($input, $output, $question);
         }
 
