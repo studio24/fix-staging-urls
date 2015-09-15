@@ -68,11 +68,26 @@ class FixUrlsCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Database name'
             )
+            ->addOption(
+                'promptmode',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Prompt for confirmations? (y)'
+            )
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        // Get promptMode - eg whether or not to prompt for confirmation to continue (handy for cron jobs)
+        $prompt = $input->getOption('promptmode');
+        if (!empty($prompt) && preg_match('/[1n](?:o)?/i', $prompt)) {
+            $output->writeln("This script will not prompt you for confirmations");
+            $promptMode = false;
+        } else {
+            $promptMode = true;
+        }
+
         // Get Absolute URL
         $absoluteUrl = $input->getArgument('absoluteUrl');
         if (preg_match('/^http/', $absoluteUrl)) {
@@ -148,13 +163,17 @@ class FixUrlsCommand extends Command
         }
         $output->writeln('<info>Connected to database</info>' . PHP_EOL);
 
-        if (!$tables) {
-            $question = new ConfirmationQuestion("<question>Do you want to continue scanning all database tables for links starting with http(s)://$absoluteUrl?</question> ", false);
-        } else {
-            $question = new ConfirmationQuestion("<question>Do you want to continue scanning database table/s " . implode(', ', $tables) . " for links starting with http(s)://$absoluteUrl?</question> ", false);
-        }
-        if (!$helper->ask($input, $output, $question)) {
-            return;
+        if ($promptMode) {
+            if (!$tables) {
+                $question = new ConfirmationQuestion("<question>Do you want to continue scanning all database tables for links starting with http(s)://$absoluteUrl?</question> ",
+                    false);
+            } else {
+                $question = new ConfirmationQuestion("<question>Do you want to continue scanning database table/s " . implode(', ',
+                        $tables) . " for links starting with http(s)://$absoluteUrl?</question> ", false);
+            }
+            if (!$helper->ask($input, $output, $question)) {
+                return;
+            }
         }
 
         // Fetch all table names from database
