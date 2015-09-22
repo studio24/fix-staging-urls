@@ -11,6 +11,8 @@ Will be translated to:
 
     <img src="/assets/img/person.jpg" alt="The team">
 
+This will update string data stored in a database as well as serialized data (arrays only).
+
 If you find any issues with this script please create a pull request!
 
 ## Usage
