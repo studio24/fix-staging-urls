@@ -49,7 +49,13 @@ Output help documentation:
 This CLI scripts uses the [Symfony Console](http://symfony.com/doc/current/components/console/index.html) component. 
 Use [Composer](http://getcomposer.org) to load this.
 
-    composer install
+To install run the following commands:
+
+```
+git clone https://github.com/studio24/fix-staging-urls
+cd fix-staging-urls
+composer install
+```
 
 ## License
 
