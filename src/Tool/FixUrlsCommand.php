@@ -69,23 +69,23 @@ class FixUrlsCommand extends Command
                 'Database name'
             )
             ->addOption(
-                'promptmode',
+                'auto-confirm',
                 null,
                 InputOption::VALUE_OPTIONAL,
-                'Prompt for confirmations? (y)'
+                'Auto confirm script actions, this will auto-run and update the database (y/n)'
             )
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        // Get promptMode - eg whether or not to prompt for confirmation to continue (handy for cron jobs)
-        $prompt = $input->getOption('promptmode');
-        if (!empty($prompt) && preg_match('/[1n](?:o)?/i', $prompt)) {
-            $output->writeln("This script will not prompt you for confirmations");
-            $promptMode = false;
+        // Whether or not to skip manual confirmation messages to run CLI script (handy for cron jobs)
+        $autoConfirm = $input->getOption('auto-confirm');
+        if (!empty($autoConfirm) && preg_match('/^y|yes$/i', $autoConfirm)) {
+            $output->writeln("This script will auto-run and update the database without any confirmation messages");
+            $autoConfirm = true;
         } else {
-            $promptMode = true;
+            $autoConfirm = false;
         }
 
         // Get Absolute URL
@@ -163,7 +163,7 @@ class FixUrlsCommand extends Command
         }
         $output->writeln('<info>Connected to database</info>' . PHP_EOL);
 
-        if ($promptMode) {
+        if (!$autoConfirm) {
             if (!$tables) {
                 $question = new ConfirmationQuestion("<question>Do you want to continue scanning all database tables for links starting with http(s)://$absoluteUrl?</question> ",
                     false);
@@ -353,11 +353,13 @@ class FixUrlsCommand extends Command
 
             $output->writeln("Found " . count($contentToFix) . " records with $replacementCount replacements in the table $table which need fixing");
 
-            $question = new ConfirmationQuestion('<question>Do you want me to replace all content? (y/n)</question> ', false);
-            if (!$helper->ask($input, $output, $question)) {
-                $output->writeln("Skipping this table");
-                $skippedTables[] = $table;
-                continue;
+            if (!$autoConfirm) {
+                $question = new ConfirmationQuestion('<question>Do you want me to replace all content? (y/n)</question> ', false);
+                if (!$helper->ask($input, $output, $question)) {
+                    $output->writeln("Skipping this table");
+                    $skippedTables[] = $table;
+                    continue;
+                }
             }
 
             $affectedRows = 0;
