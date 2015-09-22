@@ -194,6 +194,7 @@ class FixUrlsCommand extends Command
             $textFields = array();
             $primaryKeys = array();
             $replacementCount = 0;
+            $anythingSerialized = false;
 
             $output->writeln(PHP_EOL . "Checking table $table for links starting with http(s)://$absoluteUrl");
 
@@ -224,6 +225,9 @@ class FixUrlsCommand extends Command
                 $sth->execute(array('%' . $absoluteUrl . '%'));
                 foreach ($sth->fetchAll(\PDO::FETCH_ASSOC) as $row) {
 
+                    $isSerialized = false;
+                    $parseError = false;
+
                     // Build primary key refs
                     $pks = array();
                     foreach ($primaryKeys as $key) {
@@ -246,6 +250,13 @@ class FixUrlsCommand extends Command
                         continue;
                     }
 
+                    // Check for serialized data, supress notice since we are using this to test whether string is serialized
+                    $unserializedContent = @unserialize($row["content"]);
+                    if ($unserializedContent !== FALSE) {
+                        $isSerialized = true;
+                        $anythingSerialized = true;
+                    }
+
                     // Short text report on what we are replacing
                     $summary = '';
                     if (preg_match_all('!(.{0,45}' . $summaryRegex . '.{0,45})!i', $row['content'], $m, PREG_PATTERN_ORDER)) {
@@ -257,24 +268,59 @@ class FixUrlsCommand extends Command
                         }
                     }
 
-                    // Replace content
-                    $replacedContent = preg_replace($regex, $replacement, $row["content"], -1, $count);
+                    // Replace content (only works with nested arrays for now)
+                    if ($isSerialized) {
+                        $count = 0;
+
+                        // Parse nested array
+                        if (is_array($unserializedContent)) {
+                            $loopData = function($values) use (&$count, &$loopData, $regex, $replacement) {
+                                $returnData = [];
+                                foreach ($values as $key => $val) {
+                                    if (is_array($val)) {
+                                        return array($key => $loopData($val));
+                                    } else {
+                                        $returnData[$key] = preg_replace($regex, $replacement, $val, -1, $thisCount);
+                                        $count += $thisCount;
+                                    }
+                                }
+                                return $returnData;
+                            };
+                            $newContent = $loopData($unserializedContent);
+
+                            $replacedContent = serialize($newContent);
+                            if ($replacedContent === FALSE) {
+                                // error
+                                $parseError = 'Cannot serialize replaced data';
+                            }
+                        } else {
+                            // Cannot parse data structure
+                            $parseError = 'Serialized data structure too complex (only supports arrays)';
+                        }
+                    } else {
+                        $replacedContent = preg_replace($regex, $replacement, $row["content"], -1, $count);
+                    }
                     $replacedSummary = preg_replace($regex, $replacement, $summary);
 
                     // Build content to update
-                    $contentToFix[] = array(
-                        'tbl'   => $table,
-                        'fld'   => $field,
-                        'pk'    => $pks,
-                        'sum'   => $summary,
-                        'repsum' => $replacedSummary,
-                        'con'   => $replacedContent,
-                        'count' => $count
-                    );
+                    if ($parseError !== FALSE) {
+                        $output->write("<error>Table $table, Primary Key " . implode(',', $pks) . " - $parseError</error>");
+                    } else {
+                        $contentToFix[] = array(
+                            'tbl' => $table,
+                            'fld' => $field,
+                            'pk' => $pks,
+                            'sum' => $summary,
+                            'repsum' => $replacedSummary,
+                            'con' => $replacedContent,
+                            'count' => $count,
+                            'serialized' => $isSerialized
+                        );
 
-                    $replacementCount += $count;
+                        $replacementCount += $count;
 
-                    $output->write('<info>+</info>');
+                        $output->write('<info>+</info>');
+                    }
                 }
                 $output->write('<info>.</info>');
             }
@@ -300,6 +346,9 @@ class FixUrlsCommand extends Command
                 $output->writeln('Found ' . $item['count'] . ' instance/s of the staging URL:');
                 $output->writeln('Content: <fg=red>' . $item['sum'] . '</fg=red>');
                 $output->writeln('Replacement: <fg=green>' . $item['repsum'] . '</fg=green>');
+                if ($anythingSerialized) {
+                    $output->writeln('Some or all of this data is serialized');
+                }
             }
 
             $output->writeln("Found " . count($contentToFix) . " records with $replacementCount replacements in the table $table which need fixing");
