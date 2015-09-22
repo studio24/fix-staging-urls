@@ -68,11 +68,26 @@ class FixUrlsCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Database name'
             )
+            ->addOption(
+                'auto-confirm',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Auto confirm script actions, this will auto-run and update the database (y/n)'
+            )
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        // Whether or not to skip manual confirmation messages to run CLI script (handy for cron jobs)
+        $autoConfirm = $input->getOption('auto-confirm');
+        if (!empty($autoConfirm) && preg_match('/^y|yes$/i', $autoConfirm)) {
+            $output->writeln("This script will auto-run and update the database without any confirmation messages");
+            $autoConfirm = true;
+        } else {
+            $autoConfirm = false;
+        }
+
         // Get Absolute URL
         $absoluteUrl = $input->getArgument('absoluteUrl');
         if (preg_match('/^http/', $absoluteUrl)) {
@@ -121,9 +136,11 @@ class FixUrlsCommand extends Command
 
         $dbPassword = $input->getOption('password');
         if ($dbPassword == null) {
-            $question = new Question('Enter your database password: ');
+            $question = new Question('Enter your database password (hidden): ');
             $question->setValidator($notEmpty);
             $question->setMaxAttempts(2);
+            $question->setHidden(true);         // Don't output the password on the screen
+            $question->setHiddenFallback(false);// If we can't hide the password just let it show
             $dbPassword = $helper->ask($input, $output, $question);
         }
 
@@ -146,13 +163,17 @@ class FixUrlsCommand extends Command
         }
         $output->writeln('<info>Connected to database</info>' . PHP_EOL);
 
-        if (!$tables) {
-            $question = new ConfirmationQuestion("<question>Do you want to continue scanning all database tables for links starting with http(s)://$absoluteUrl?</question> ", false);
-        } else {
-            $question = new ConfirmationQuestion("<question>Do you want to continue scanning database table/s " . implode(', ', $tables) . " for links starting with http(s)://$absoluteUrl?</question> ", false);
-        }
-        if (!$helper->ask($input, $output, $question)) {
-            return;
+        if (!$autoConfirm) {
+            if (!$tables) {
+                $question = new ConfirmationQuestion("<question>Do you want to continue scanning all database tables for links starting with http(s)://$absoluteUrl?</question> ",
+                    false);
+            } else {
+                $question = new ConfirmationQuestion("<question>Do you want to continue scanning database table/s " . implode(', ',
+                        $tables) . " for links starting with http(s)://$absoluteUrl?</question> ", false);
+            }
+            if (!$helper->ask($input, $output, $question)) {
+                return;
+            }
         }
 
         // Fetch all table names from database
@@ -332,11 +353,13 @@ class FixUrlsCommand extends Command
 
             $output->writeln("Found " . count($contentToFix) . " records with $replacementCount replacements in the table $table which need fixing");
 
-            $question = new ConfirmationQuestion('<question>Do you want me to replace all content? (y/n)</question> ', false);
-            if (!$helper->ask($input, $output, $question)) {
-                $output->writeln("Skipping this table");
-                $skippedTables[] = $table;
-                continue;
+            if (!$autoConfirm) {
+                $question = new ConfirmationQuestion('<question>Do you want me to replace all content? (y/n)</question> ', false);
+                if (!$helper->ask($input, $output, $question)) {
+                    $output->writeln("Skipping this table");
+                    $skippedTables[] = $table;
+                    continue;
+                }
             }
 
             $affectedRows = 0;
