@@ -19,20 +19,20 @@ If you find any issues with this script please create a pull request!
 
 Simple usage:
 
-    php fixUrls.php staging.domain.com
+    bin/fix-urls staging.domain.com
 
 Specify which database table/s to replace content in (you can add any number of tables at the end of the argument list, 
 separated by spaces):
 
-    php fixUrls.php staging.domain.com exp_channel_data
+    bin/fix-urls staging.domain.com exp_channel_data
 
 You can pass database parameters:
 
-    php fixUrls.php staging.domain.com --host=localhost --username=user --password=abc123 --database=my_database 
+    bin/fix-urls staging.domain.com --host=localhost --username=user --password=abc123 --database=my_database 
 
 You can also replace the base path for all links:
 
-    php fixUrls.php staging.domain.com --basePathRemove=/sites/default/files/ --basePathReplace=/files/
+    bin/fix-urls staging.domain.com --basePathRemove=/sites/default/files/ --basePathReplace=/files/
 
 For example, links such as:
 
@@ -44,7 +44,7 @@ Will be translated to:
 
 Output help documentation:
 
-    php fixUrls.php --help
+    bin/fix-urls --help
 
 ## Installation
 
@@ -61,6 +61,6 @@ composer install
 
 ## License
 
-MIT License (MIT)
-Copyright (c) 2014-2015 Studio 24 Ltd (www.studio24.net)
+MIT License (MIT)  
+Copyright (c) 2014-2018 Studio 24 Ltd (www.studio24.net)
 

@@ -1,5 +1,7 @@
 <?php
-namespace S24\Tool;
+declare(strict_types=1);
+
+namespace S24\Tool\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -9,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
-class FixUrlsCommand extends Command
+class FixUrls extends Command
 {
     protected function configure()
     {

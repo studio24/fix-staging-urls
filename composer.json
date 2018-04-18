@@ -1,10 +1,11 @@
 {
     "require": {
-        "symfony/console": "~2.6"
+        "php": "^7.0",
+        "symfony/console": "^4.0"
     },
     "autoload": {
         "psr-4": {
-            "S24\\": "src/"
+            "S24\\Tool\\": "src/"
         }
     }
 }

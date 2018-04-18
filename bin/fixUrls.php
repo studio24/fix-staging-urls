@@ -21,12 +21,16 @@
  * @license MIT License (MIT)
  */
 
-ini_set('display_errors', true);
-error_reporting(E_ALL);
+declare(strict_types=1);
 
-require __DIR__.'/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
-use S24\Tool\MyApplication;
+use S24\Tool\Command\FixUrls;
+use S24\Tool\Version;
+use Symfony\Component\Console\Application;
 
-$application = new MyApplication();
+$command = new FixUrls();
+$application = new Application('studio24/fix-staging-urls', Version::VERSION);
+$application->add($command);
+$application->setDefaultCommand($command->getName());
 $application->run();
