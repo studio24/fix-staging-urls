@@ -54,6 +54,14 @@ Use [Composer](http://getcomposer.org) to load this.
 To install run the following commands:
 
 ```
+wget https://github.com/studio24/fix-staging-urls/archive/v1.1.tar.gz -O - | tar -xz
+cd fix-staging-urls-1.1
+composer install
+```
+
+Or if you want to check out the Git repo:
+
+```
 git clone https://github.com/studio24/fix-staging-urls
 cd fix-staging-urls
 composer install
@@ -62,5 +70,5 @@ composer install
 ## License
 
 MIT License (MIT)
-Copyright (c) 2014-2015 Studio 24 Ltd (www.studio24.net)
+Copyright (c) 2014-2019 Studio 24 Ltd (www.studio24.net)
 
