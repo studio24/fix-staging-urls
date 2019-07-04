@@ -279,7 +279,7 @@ class FixUrlsCommand extends Command
                                 foreach ($values as $key => $val) {
                                     if (is_array($val)) {
                                         return array($key => $loopData($val));
-                                    } else {
+                                    } elseif (is_string($val)) {
                                         $returnData[$key] = preg_replace($regex, $replacement, $val, -1, $thisCount);
                                         $count += $thisCount;
                                     }
